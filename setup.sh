@@ -80,19 +80,33 @@ echo
 if [[ `uname -r` =~ "WSL2" ]]; then
     echo "${GREEN}* WSL2 Windows environment detected.${NC}"
 
+    # We need Administrator access for some of this... but we don't have it.
+    # We can use Start-Process in PowerShell to run a new WSL2 terminal with Administrator privileges.
+
     echo "${GREEN}  -> Automatically installing self-signed SSL certificates on Windows...${NC}"
+
+    powershell.exe -command "Start-Process -FilePath \"wsl\"" -ArgumentList \"cd `pwd`\; ./docker/wsl2-install-certs.sh\" -Verb RunAs
+
     echo "${GREEN}  -> Automatically adding domain '${DOMAIN}' to hosts file${NC}"
 
-    # We need Administrator access for this... but we don't have it.
-    # We can use Start-Process in PowerShell to run a new WSL2
-    # terminal with Administrator privileges.
-    # After that, we will run the win-wsl2-setup.sh script.
-    powershell.exe -command "Start-Process -FilePath \"wsl\"" -ArgumentList \"cd `pwd`\; ./docker/wsl2-install-certs-hosts.sh\" -Verb RunAs
+    powershell.exe -command "Start-Process -FilePath \"wsl\"" -ArgumentList \"cd `pwd`\; ./docker/wsl2-update-hosts.sh\" -Verb RunAs
+elif [[ "$MACHINE" == "mac" ]]; then
+    echo "${GREEN}* Mac environment detected.${NC}"
+
+    echo "${GREEN}  -> Automatically installing self-signed SSL certificates on Mac using 'sudo'...${NC}"
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/nginx-selfsigned.crt
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/nginx-root-ca.pem
+
+    echo "${GREEN}  -> We will try to automatically add domain '${DOMAIN}' to hosts file using 'sudo'...${NC}"
+    sudo ./docker/mac-update-hosts.sh
 else
-    echo "${RED}* WSL2 Windows environment not detected.${NC}"
-    echo
-    echo "${RED}You might be running this script on Linux, Mac OS X or Windows without WSL2.${NC}"
+    echo "${RED}* Linux environment detected.${NC}"
+
+    echo "${GREEN}  -> We will try to automatically add domain '${DOMAIN}' to hosts file using 'sudo'...${NC}"
+
+    sudo ./docker/linux-update-hosts.sh
+
     echo
     echo "${RED}! Please install the self-signed SSL certificate located at /docker/certs into your OS yourself, or simply ignore the SSL certificate warning in your browser.${NC}"
-    echo "${RED}! Please make sure domain '${DOMAIN}' resolves to 127.0.0.1 yourself by editing your hosts file.${NC}"
+    echo
 fi
