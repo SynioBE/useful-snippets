@@ -1,0 +1,64 @@
+import:
+  - recipe/common.php
+  - recipe/composer.php
+
+config:
+  repository: '<repository>'
+  http_user: '<username>'
+  writable_mode: chmod
+  sub_directory: bedrock
+  bin/composer: '/usr/local/bin/composer'
+  shared_dirs:
+    - 'web/app/cache'
+    - 'web/app/webp-express'
+    - 'web/app/wflogs'
+    - 'web/app/uploads'
+    - 'web/app/languages'
+  shared_files:
+    - 'web/.htaccess'
+    - '.env'
+    - 'wp-debug.log'
+    - 'web/app/advanced-cache.php'
+
+hosts:
+  hostname:
+    hostname: '<hostname>'
+    remote_user: '<username>'
+    deploy_path: '~/staging'
+    stage: staging
+    branch: staging
+  staging.hostname:
+    hostname: '<hostname>'
+    remote_user: '<username>'
+    deploy_path: '~/live'
+    stage: production
+    branch: main
+
+tasks:
+  vendors:theme:
+    - cd: "{{release_path}}/web/app/themes/<custom-theme>"
+    - run: "{{bin/composer}} install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader"
+  flyingpress:
+    - cd: "{{release_path}}"
+    - run: "wp plugin deactivate flying-press; wp plugin activate flying-press"
+  activate_redis:
+    - cd: "{{release_path}}"
+    - run: "wp plugin activate redis-cache; wp redis enable"
+  reload:
+    - cd: "{{release_path}}"
+    - run: "reloadPHP.sh"
+  flush_permalinks:
+    - cd: "{{release_path}}"
+    - run: "wp rewrite flush"
+  symlink_htaccess:
+    - cd: "{{release_path}}/web/wp"
+    - run: "ln -sf ../.htaccess .htaccess"
+
+after:
+  deploy:vendors: vendors:theme
+  deploy:failed: deploy:unlock
+  deploy:symlink:
+    - flyingpress
+    - activate_redis
+    - reload
+    - symlink_htaccess
