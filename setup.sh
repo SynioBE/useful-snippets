@@ -10,7 +10,7 @@ case "${UNAMEOUT}" in
 esac
 
 if [ "$MACHINE" == "UNKNOWN" ]; then
-    echo "Unsupported operating system [$(uname -s)]. Tunity supports macOS, Linux, and Windows (WSL2)." >&2
+    echo "Unsupported operating system [$(uname -s)]. Synio supports macOS, Linux, and Windows (WSL2)." >&2
     exit 1
 fi
 
