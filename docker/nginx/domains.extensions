@@ -1,0 +1,10 @@
+[ domains ]
+nsCertType              = server
+keyUsage                = digitalSignature,nonRepudiation,keyEncipherment
+extendedKeyUsage        = serverAuth
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid,issuer
+subjectAltName          = @domains_subject
+[ domains_subject ]
+DNS.1 = %DOMAIN%
+DNS.2 = www.%DOMAIN%
